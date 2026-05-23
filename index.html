@@ -1,0 +1,1792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CartSmart">
+  <title>CartSmart</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:    #34C759;
+      --green-dk: #248A3D;
+      --red:      #FF3B30;
+      --orange:   #FF9500;
+      --blue:     #007AFF;
+      --gray1:    #8E8E93;
+      --gray2:    #AEAEB2;
+      --gray3:    #C7C7CC;
+      --gray4:    #D1D1D6;
+      --gray5:    #E5E5EA;
+      --gray6:    #F2F2F7;
+      --text:     #1C1C1E;
+      --text2:    #3A3A3C;
+      --text3:    #636366;
+      --bg:       #F2F2F7;
+      --card:     #FFFFFF;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bot: env(safe-area-inset-bottom, 0px);
+      --nav-h:    56px;
+    }
+
+    html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+
+    /* ── Layout ── */
+    #app {
+      position: fixed; inset: 0;
+      display: grid;
+      grid-template-rows: 1fr auto;
+    }
+
+    #screens { position: relative; overflow: hidden; }
+
+    .screen {
+      position: absolute; inset: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-top: calc(var(--safe-top) + 8px);
+      padding-bottom: 24px;
+      display: none;
+    }
+    .screen.active { display: block; }
+
+    /* ── Page header ── */
+    .ph {
+      padding: 8px 16px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .ph-title {
+      font-size: 30px;
+      font-weight: 700;
+      letter-spacing: -0.6px;
+      color: var(--text);
+    }
+    .ph-action {
+      border: none; background: none; cursor: pointer;
+      font-size: 15px; font-weight: 600;
+      color: var(--green);
+      -webkit-tap-highlight-color: transparent;
+      padding: 6px 0 6px 12px;
+    }
+
+    /* ── Bottom nav ── */
+    #nav {
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 0.5px solid var(--gray4);
+      display: flex;
+      padding-bottom: var(--safe-bot);
+    }
+    .nav-btn {
+      flex: 1;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 3px;
+      padding: 8px 0 6px;
+      border: none; background: none; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      color: var(--gray2);
+      transition: color 0.12s;
+    }
+    .nav-btn.active { color: var(--green); }
+    .nav-btn svg { width: 26px; height: 26px; }
+    .nav-label { font-size: 10px; font-weight: 500; letter-spacing: 0.2px; }
+
+    /* ── Cards / Sections ── */
+    .section { margin: 0 16px 20px; }
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+
+    /* ── Rows ── */
+    .row {
+      display: flex; align-items: center;
+      padding: 13px 16px;
+      border-bottom: 0.5px solid var(--gray5);
+      gap: 12px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.1s;
+    }
+    .row:last-child { border-bottom: none; }
+    .row:active { background: var(--gray6); }
+    .row-icon { font-size: 22px; width: 30px; text-align: center; flex-shrink: 0; }
+    .row-body { flex: 1; min-width: 0; }
+    .row-label { font-size: 16px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .row-sub   { font-size: 13px; color: var(--gray1); margin-top: 2px; }
+    .row-right { color: var(--gray3); flex-shrink: 0; }
+    .row-badge {
+      background: var(--green); color: #fff;
+      font-size: 12px; font-weight: 600;
+      padding: 2px 8px; border-radius: 20px;
+      min-width: 24px; text-align: center;
+    }
+
+    /* ── Empty state ── */
+    .empty {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 14px;
+      padding: 64px 32px;
+      text-align: center;
+    }
+    .empty-icon { font-size: 60px; line-height: 1; }
+    .empty-title { font-size: 20px; font-weight: 600; color: var(--text); }
+    .empty-sub { font-size: 15px; color: var(--gray1); line-height: 1.5; }
+
+    /* ── FAB ── */
+    #fab {
+      position: fixed;
+      bottom: calc(var(--nav-h) + var(--safe-bot) + 18px);
+      right: 20px;
+      width: 54px; height: 54px;
+      border-radius: 50%;
+      background: var(--green);
+      border: none; color: #fff;
+      font-size: 30px; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 18px rgba(52,199,89,0.42);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.1s, box-shadow 0.1s;
+      z-index: 10;
+    }
+    #fab:active { transform: scale(0.92); box-shadow: 0 2px 8px rgba(52,199,89,0.3); }
+
+    /* ── Modal / Sheet ── */
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 100;
+      display: none;
+      align-items: flex-end;
+    }
+    .overlay.open { display: flex; }
+
+    .sheet {
+      background: var(--card);
+      border-radius: 18px 18px 0 0;
+      width: 100%;
+      padding: 0 0 calc(var(--safe-bot) + 8px);
+      animation: slideUp 0.22s ease;
+    }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+    .sheet-handle {
+      width: 36px; height: 4px;
+      background: var(--gray4);
+      border-radius: 2px;
+      margin: 12px auto 0;
+    }
+    .sheet-title {
+      font-size: 17px; font-weight: 600;
+      text-align: center;
+      padding: 14px 16px 12px;
+      border-bottom: 0.5px solid var(--gray5);
+    }
+
+    /* ── Input ── */
+    .input-wrap { padding: 16px; }
+    .inp {
+      width: 100%;
+      font-size: 16px;
+      padding: 12px 14px;
+      border: 1.5px solid var(--gray4);
+      border-radius: 10px;
+      outline: none;
+      background: var(--gray6);
+      color: var(--text);
+      font-family: inherit;
+      -webkit-appearance: none;
+    }
+    .inp:focus { border-color: var(--green); background: #fff; }
+
+    /* ── Btn row ── */
+    .btn-row { display: flex; gap: 10px; padding: 0 16px 8px; }
+    .btn {
+      flex: 1;
+      padding: 13px 8px;
+      border-radius: 12px;
+      border: none;
+      font-size: 16px; font-weight: 600;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: opacity 0.1s;
+    }
+    .btn:active { opacity: 0.8; }
+    .btn-primary { background: var(--green); color: #fff; }
+    .btn-secondary { background: var(--gray5); color: var(--text); }
+
+    /* ── Settings rows ── */
+    .settings-label {
+      font-size: 12px; font-weight: 600;
+      color: var(--gray1);
+      text-transform: uppercase; letter-spacing: 0.6px;
+      padding: 16px 16px 6px;
+    }
+    .settings-row {
+      display: flex; align-items: center;
+      padding: 14px 16px;
+      border-bottom: 0.5px solid var(--gray5);
+      gap: 12px;
+    }
+    .settings-row:last-child { border-bottom: none; }
+    .settings-row-icon { font-size: 20px; width: 28px; text-align: center; }
+    .settings-row-label { flex: 1; font-size: 16px; color: var(--text); }
+    .settings-row-value { font-size: 15px; color: var(--gray1); }
+
+    /* ── About ── */
+    .about {
+      text-align: center;
+      padding: 28px 16px 0;
+      color: var(--gray2);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+    .about strong { color: var(--gray1); }
+
+    /* ── More button (⋯ on list rows) ── */
+    .more-btn {
+      border: none; background: none;
+      font-size: 20px; color: var(--gray3);
+      padding: 8px 0 8px 10px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .more-btn:active { color: var(--gray1); }
+
+    /* ── Active list highlight ── */
+    .row.is-active { background: #F0FBF3; }
+    .row.is-active .row-label { color: var(--green-dk); }
+
+    /* ── Action sheet ── */
+    .action-sheet {
+      background: var(--card);
+      border-radius: 18px 18px 0 0;
+      width: 100%;
+      padding: 0 0 calc(var(--safe-bot) + 8px);
+      animation: slideUp 0.22s ease;
+    }
+    .action-sheet-title {
+      font-size: 13px; font-weight: 500;
+      color: var(--gray1);
+      text-align: center;
+      padding: 14px 16px 10px;
+      border-bottom: 0.5px solid var(--gray5);
+    }
+    .action-item {
+      display: flex; align-items: center;
+      gap: 14px;
+      padding: 15px 20px;
+      border-bottom: 0.5px solid var(--gray5);
+      font-size: 17px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.1s;
+    }
+    .action-item:last-child { border-bottom: none; }
+    .action-item:active { background: var(--gray6); }
+    .action-item-icon { font-size: 20px; width: 26px; text-align: center; }
+    .action-item.danger { color: var(--red); }
+    .action-item.cancel { color: var(--blue); font-weight: 600; justify-content: center; margin-top: 8px; border-top: 0.5px solid var(--gray5); }
+
+    /* ── Search highlight ── */
+    mark { background: rgba(52,199,89,0.18); color: var(--text); border-radius: 2px; font-style: normal; }
+
+    /* ── Close / X btn ── */
+    .close-btn {
+      border: none; background: var(--gray5);
+      width: 28px; height: 28px; border-radius: 50%;
+      font-size: 14px; color: var(--gray1);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .close-btn:active { background: var(--gray4); }
+
+    /* ── Add Item Sheet ── */
+    .add-sheet {
+      background: var(--card);
+      border-radius: 18px 18px 0 0;
+      width: 100%; max-height: 86vh;
+      display: flex; flex-direction: column;
+      padding-bottom: calc(var(--safe-bot) + 6px);
+      animation: slideUp 0.22s ease;
+    }
+    .add-sheet-header {
+      display: flex; align-items: center;
+      gap: 10px; padding: 10px 14px 10px 16px;
+      border-bottom: 0.5px solid var(--gray5);
+      flex-shrink: 0;
+    }
+    .add-search-wrap {
+      flex: 1; display: flex; align-items: center;
+      background: var(--gray6); border-radius: 10px;
+      padding: 0 10px; gap: 6px;
+    }
+    .add-search-inp {
+      flex: 1; border: none; background: none; outline: none;
+      font-size: 16px; color: var(--text);
+      padding: 10px 0; font-family: inherit;
+    }
+    .add-search-inp::placeholder { color: var(--gray3); }
+    .search-clear {
+      border: none; background: none; color: var(--gray3);
+      font-size: 16px; cursor: pointer; padding: 4px;
+      line-height: 1; -webkit-tap-highlight-color: transparent;
+      display: none;
+    }
+    .add-results {
+      flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      min-height: 80px;
+    }
+    .add-result-row {
+      display: flex; align-items: center;
+      padding: 12px 16px;
+      border-bottom: 0.5px solid var(--gray5);
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+    .add-result-row:last-child { border-bottom: none; }
+    .add-result-row:active { background: var(--gray6); }
+    .add-result-name { font-size: 15px; font-weight: 500; color: var(--text); }
+    .add-result-cat { font-size: 12px; color: var(--gray1); margin-top: 2px; }
+    .add-manual-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 13px 16px; cursor: pointer;
+      color: var(--blue); font-size: 15px; font-weight: 600;
+      -webkit-tap-highlight-color: transparent;
+      border-top: 0.5px solid var(--gray5);
+    }
+    .add-manual-row:active { background: var(--gray6); }
+    .add-hint {
+      padding: 28px 16px; text-align: center;
+      color: var(--gray2); font-size: 14px; line-height: 1.6;
+    }
+
+    /* ── Add Footer ── */
+    .add-footer {
+      border-top: 0.5px solid var(--gray5);
+      padding: 12px 16px 6px; flex-shrink: 0;
+    }
+    .qty-row {
+      display: flex; align-items: center;
+      gap: 8px; margin-bottom: 10px;
+    }
+    .qty-label {
+      font-size: 12px; font-weight: 600; color: var(--gray1);
+      text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0;
+    }
+    .qty-inp {
+      width: 58px; font-size: 17px; font-weight: 600; text-align: center;
+      border: 1.5px solid var(--gray4); border-radius: 8px;
+      padding: 6px 2px; background: var(--gray6); color: var(--text);
+      font-family: inherit; outline: none; -webkit-appearance: none; flex-shrink: 0;
+    }
+    .qty-inp:focus { border-color: var(--green); background: #fff; }
+    .unit-chips {
+      display: flex; gap: 6px;
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+      scrollbar-width: none; padding-bottom: 1px;
+    }
+    .unit-chips::-webkit-scrollbar { display: none; }
+    .unit-chip {
+      border: 1.5px solid var(--gray4); border-radius: 16px;
+      padding: 4px 10px; font-size: 13px; font-weight: 500;
+      color: var(--gray1); background: var(--gray6);
+      white-space: nowrap; cursor: pointer; flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent; transition: all 0.1s;
+    }
+    .unit-chip.active { background: var(--green); border-color: var(--green); color: #fff; }
+
+    /* ── Progress bar ── */
+    .progress-wrap {
+      height: 4px; background: var(--gray5);
+      position: sticky; top: 0; z-index: 5;
+    }
+    .progress-bar {
+      height: 100%; background: var(--green);
+      border-radius: 0 2px 2px 0;
+      transition: width 0.35s ease;
+      min-width: 4px;
+    }
+
+    /* ── Shop summary row ── */
+    .shop-summary {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 20px 4px; font-size: 14px;
+    }
+    .shop-summary-text { color: var(--gray1); }
+    .clear-done-btn {
+      border: none; background: none; cursor: pointer;
+      color: var(--red); font-size: 13px; font-weight: 600;
+      padding: 4px 0; -webkit-tap-highlight-color: transparent;
+    }
+    .clear-done-btn:active { opacity: 0.7; }
+
+    /* ── Category label ── */
+    .cat-label {
+      font-size: 12px; font-weight: 600; color: var(--gray1);
+      text-transform: uppercase; letter-spacing: 0.6px;
+      padding: 0 4px 6px;
+    }
+
+    /* ── Shop item row (split tap zone + delete btn) ── */
+    .shop-item {
+      display: flex; align-items: stretch;
+      border-bottom: 0.5px solid var(--gray5);
+      overflow: hidden;
+    }
+    .shop-item:last-child { border-bottom: none; }
+    .shop-tap {
+      display: flex; align-items: center;
+      gap: 12px; flex: 1;
+      padding: 12px 10px 12px 16px;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+      transition: background 0.1s;
+    }
+    .shop-tap:active { background: var(--gray6); }
+    .item-check {
+      width: 24px; height: 24px; border-radius: 50%;
+      border: 2px solid var(--gray3); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .shop-item.done .item-check { background: var(--green); border-color: var(--green); }
+    .shop-item.done .item-check::after { content: '✓'; color: #fff; font-size: 13px; font-weight: 700; }
+    .item-name { font-size: 16px; font-weight: 500; color: var(--text); }
+    .item-qty  { font-size: 13px; color: var(--gray1); margin-top: 2px; }
+    .shop-item.done .item-name { color: var(--gray3); text-decoration: line-through; }
+    .shop-item.done .item-qty  { color: var(--gray4); }
+    .item-del {
+      background: none; border: none;
+      border-left: 0.5px solid var(--gray5);
+      color: var(--gray3); font-size: 20px;
+      padding: 0 14px; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: color 0.1s, background 0.1s;
+    }
+    .item-del:active { color: var(--red); background: rgba(255,59,48,0.08); }
+
+    /* ── All Done celebration ── */
+    .all-done-card {
+      margin: 24px 16px;
+      background: var(--card);
+      border-radius: 16px;
+      padding: 32px 20px;
+      text-align: center;
+      box-shadow: 0 2px 12px rgba(52,199,89,0.12);
+    }
+    .all-done-emoji { font-size: 64px; line-height: 1; margin-bottom: 12px; }
+    .all-done-title { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+    .all-done-sub { font-size: 15px; color: var(--gray1); line-height: 1.5; margin-bottom: 20px; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: calc(var(--nav-h) + var(--safe-bot) + 80px);
+      left: 50%; transform: translateX(-50%);
+      background: rgba(28,28,30,0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: #fff; padding: 10px 20px;
+      border-radius: 20px; font-size: 14px; font-weight: 500;
+      z-index: 300; white-space: nowrap;
+      opacity: 0; transition: opacity 0.2s;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; }
+
+    /* ── Shop nav badge ── */
+    .nav-badge-wrap { position: relative; display: inline-flex; }
+    .nav-badge {
+      position: absolute; top: -5px; right: -8px;
+      background: var(--red); color: #fff;
+      font-size: 9px; font-weight: 700;
+      padding: 1px 4px; border-radius: 8px;
+      min-width: 14px; text-align: center;
+      line-height: 14px; height: 14px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div id="screens">
+
+    <!-- LISTS TAB -->
+    <div class="screen active" id="screen-lists">
+      <div class="ph">
+        <span class="ph-title">My Lists</span>
+      </div>
+      <div class="section" id="lists-container">
+        <div class="empty" id="lists-empty">
+          <div class="empty-icon">🛒</div>
+          <div class="empty-title">No lists yet</div>
+          <div class="empty-sub">Tap <strong>+</strong> to create your first grocery list</div>
+        </div>
+        <div class="card" id="lists-card" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- SHOP TAB -->
+    <div class="screen" id="screen-shop">
+      <div class="ph">
+        <span class="ph-title" id="shop-title">Shopping</span>
+        <button class="ph-action" id="shop-share-btn" onclick="shareList()" style="display:none">Share ↗</button>
+      </div>
+      <div id="shop-body">
+        <div class="empty">
+          <div class="empty-icon">🥦</div>
+          <div class="empty-title">No list open</div>
+          <div class="empty-sub">Open a list from <strong>My Lists</strong> to start shopping</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div class="screen" id="screen-settings">
+      <div class="ph">
+        <span class="ph-title">Settings</span>
+      </div>
+
+      <div class="section">
+        <div class="settings-label">Data</div>
+        <div class="card">
+          <div class="settings-row" onclick="exportData()">
+            <span class="settings-row-icon">📤</span>
+            <span class="settings-row-label">Export Backup</span>
+            <span class="settings-row-value">JSON</span>
+          </div>
+          <div class="settings-row" onclick="importData()">
+            <span class="settings-row-icon">📥</span>
+            <span class="settings-row-label">Import Backup</span>
+          </div>
+          <div class="settings-row" onclick="clearAllData()" style="color:var(--red);">
+            <span class="settings-row-icon">🗑️</span>
+            <span class="settings-row-label" style="color:var(--red);">Clear All Data</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="settings-label">About</div>
+        <div class="card">
+          <div class="settings-row">
+            <span class="settings-row-icon">🛒</span>
+            <span class="settings-row-label">CartSmart</span>
+            <span class="settings-row-value" id="app-version">v1.0</span>
+          </div>
+          <div class="settings-row">
+            <span class="settings-row-icon">📦</span>
+            <span class="settings-row-label">Lists</span>
+            <span class="settings-row-value" id="stats-lists">0</span>
+          </div>
+          <div class="settings-row">
+            <span class="settings-row-icon">🏷️</span>
+            <span class="settings-row-label">Total Items</span>
+            <span class="settings-row-value" id="stats-items">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="about">
+        Works fully offline · Data stays on your phone<br>
+        <strong>No account needed</strong>
+      </div>
+    </div>
+
+  </div><!-- /screens -->
+
+  <nav id="nav">
+    <button class="nav-btn active" onclick="showTab('lists')" id="nav-lists">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+        <rect x="9" y="3" width="6" height="4" rx="1"/>
+        <line x1="9" y1="12" x2="15" y2="12"/>
+        <line x1="9" y1="16" x2="13" y2="16"/>
+      </svg>
+      <span class="nav-label">Lists</span>
+    </button>
+    <button class="nav-btn" onclick="showTab('shop')" id="nav-shop">
+      <div class="nav-badge-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="26" height="26">
+          <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+        </svg>
+        <span class="nav-badge" id="shop-badge"></span>
+      </div>
+      <span class="nav-label">Shop</span>
+    </button>
+    <button class="nav-btn" onclick="showTab('settings')" id="nav-settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </svg>
+      <span class="nav-label">Settings</span>
+    </button>
+  </nav>
+</div><!-- /app -->
+
+<!-- FAB -->
+<button id="fab" onclick="openNewListSheet()" title="New list">+</button>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Import Shared List Sheet -->
+<div class="overlay" id="overlay-import" onclick="closeSheet('import')">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Shared List</div>
+    <div id="import-body" style="max-height:50vh;overflow-y:auto;"></div>
+    <div class="btn-row" style="margin-top:8px;">
+      <button class="btn btn-secondary" onclick="closeSheet('import')">Dismiss</button>
+      <button class="btn btn-primary" onclick="importSharedList()">Save to My Lists</button>
+    </div>
+  </div>
+</div>
+
+<!-- New List Sheet -->
+<div class="overlay" id="overlay-newlist" onclick="closeSheet('newlist')">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">New List</div>
+    <div class="input-wrap">
+      <input class="inp" id="inp-listname" type="text" placeholder="e.g. Weekly Shop, Costco, Indian Store…" maxlength="40" autocomplete="off">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="closeSheet('newlist')">Cancel</button>
+      <button class="btn btn-primary" onclick="createList()">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- Rename List Sheet -->
+<div class="overlay" id="overlay-rename" onclick="closeSheet('rename')">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Rename List</div>
+    <div class="input-wrap">
+      <input class="inp" id="inp-rename" type="text" maxlength="40" autocomplete="off">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="closeSheet('rename')">Cancel</button>
+      <button class="btn btn-primary" onclick="commitRename()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Item Sheet -->
+<div class="overlay" id="overlay-additem" onclick="closeSheet('additem')">
+  <div class="add-sheet" onclick="event.stopPropagation()">
+    <div class="add-sheet-header">
+      <div class="add-search-wrap">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--gray2);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="add-search-inp" id="add-search-inp" type="text"
+          placeholder="Search 300+ items or type your own…"
+          autocomplete="off" autocorrect="off" spellcheck="false"
+          oninput="onAddSearchInput()">
+        <button class="search-clear" id="search-clear" onclick="clearSearch()">✕</button>
+      </div>
+      <button class="close-btn" onclick="closeSheet('additem')">✕</button>
+    </div>
+
+    <div class="add-results" id="add-results">
+      <div class="add-hint">Type to search 300+ Indian &amp; American items<br>or enter any name to add it manually</div>
+    </div>
+
+    <div class="add-footer">
+      <div class="qty-row">
+        <span class="qty-label">Qty</span>
+        <input class="qty-inp" id="qty-inp" type="number" value="1" min="0.1" step="0.5">
+        <div class="unit-chips" id="unit-chips"></div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-bottom:4px;" onclick="addItem()">Add to List</button>
+    </div>
+  </div>
+</div>
+
+<!-- List Action Sheet -->
+<div class="overlay" id="overlay-action" onclick="closeSheet('action')">
+  <div class="action-sheet" onclick="event.stopPropagation()">
+    <div class="sheet-handle" style="margin-bottom:0"></div>
+    <div class="action-sheet-title" id="action-title">List options</div>
+    <div class="action-item" onclick="actionOpen()">
+      <span class="action-item-icon">🛒</span> Open &amp; Shop
+    </div>
+    <div class="action-item" onclick="actionRename()">
+      <span class="action-item-icon">✏️</span> Rename
+    </div>
+    <div class="action-item" onclick="actionDuplicate()">
+      <span class="action-item-icon">📋</span> Duplicate
+    </div>
+    <div class="action-item danger" onclick="actionDelete()">
+      <span class="action-item-icon">🗑️</span> Delete List
+    </div>
+    <div class="action-item cancel" onclick="closeSheet('action')">Cancel</div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ── Units & Categories ────────────────────────────────────────────────────────
+const UNITS = ['pcs','kg','g','L','ml','pack','box','bottle','can','bunch','loaf','dozen','lb'];
+
+const CATS = [
+  'Atta & Grains','Dals & Pulses','Rice','Spices & Masalas','Oils & Ghee',
+  'Dairy','Pickles & Chutneys','Snacks & Namkeen','Frozen Indian','Beverages',
+  'Fresh Vegetables','Fresh Fruits',
+  'Produce','Meat & Seafood','Dairy & Eggs','Bread & Bakery','Frozen',
+  'Canned & Dry Goods','Snacks','Condiments',
+  'Household','Personal Care','Cleaning','Baby & Pet'
+];
+
+// ── Item Database (300 items) ─────────────────────────────────────────────────
+const DB = [
+  // Atta & Grains
+  {n:'Wheat Flour (Atta)',c:'Atta & Grains',u:'kg'},
+  {n:'Maida (All-purpose Flour)',c:'Atta & Grains',u:'kg'},
+  {n:'Besan (Chickpea Flour)',c:'Atta & Grains',u:'kg'},
+  {n:'Ragi Flour',c:'Atta & Grains',u:'kg'},
+  {n:'Jowar Flour',c:'Atta & Grains',u:'kg'},
+  {n:'Bajra Flour',c:'Atta & Grains',u:'kg'},
+  {n:'Suji / Rava (Semolina)',c:'Atta & Grains',u:'kg'},
+  {n:'Corn Flour',c:'Atta & Grains',u:'kg'},
+  {n:'Rice Flour',c:'Atta & Grains',u:'kg'},
+  {n:'Oats',c:'Atta & Grains',u:'kg'},
+  {n:'Poha (Flattened Rice)',c:'Atta & Grains',u:'kg'},
+  {n:'Murmura (Puffed Rice)',c:'Atta & Grains',u:'pack'},
+  {n:'Sabudana (Tapioca)',c:'Atta & Grains',u:'kg'},
+  {n:'Daliya (Broken Wheat)',c:'Atta & Grains',u:'kg'},
+  {n:'Vermicelli (Sevai)',c:'Atta & Grains',u:'pack'},
+
+  // Dals & Pulses
+  {n:'Toor Dal (Arhar)',c:'Dals & Pulses',u:'kg'},
+  {n:'Chana Dal',c:'Dals & Pulses',u:'kg'},
+  {n:'Moong Dal (Yellow, Split)',c:'Dals & Pulses',u:'kg'},
+  {n:'Moong (Green, Whole)',c:'Dals & Pulses',u:'kg'},
+  {n:'Urad Dal (White, Split)',c:'Dals & Pulses',u:'kg'},
+  {n:'Urad (Black, Whole)',c:'Dals & Pulses',u:'kg'},
+  {n:'Masoor Dal (Red Lentils)',c:'Dals & Pulses',u:'kg'},
+  {n:'Rajma (Kidney Beans)',c:'Dals & Pulses',u:'kg'},
+  {n:'Chana (Chickpeas)',c:'Dals & Pulses',u:'kg'},
+  {n:'Kala Chana (Black Chickpeas)',c:'Dals & Pulses',u:'kg'},
+  {n:'Lobiya (Black-eyed Peas)',c:'Dals & Pulses',u:'kg'},
+  {n:'Moth Dal',c:'Dals & Pulses',u:'kg'},
+  {n:'Val Dal',c:'Dals & Pulses',u:'kg'},
+  {n:'Soya Chunks',c:'Dals & Pulses',u:'pack'},
+
+  // Rice
+  {n:'Basmati Rice',c:'Rice',u:'kg'},
+  {n:'Sona Masuri Rice',c:'Rice',u:'kg'},
+  {n:'Idli Rice',c:'Rice',u:'kg'},
+  {n:'Brown Rice',c:'Rice',u:'kg'},
+  {n:'Kolam Rice',c:'Rice',u:'kg'},
+  {n:'Parboiled Rice',c:'Rice',u:'kg'},
+
+  // Spices & Masalas
+  {n:'Red Chilli Powder',c:'Spices & Masalas',u:'g'},
+  {n:'Turmeric Powder (Haldi)',c:'Spices & Masalas',u:'g'},
+  {n:'Coriander Powder (Dhaniya)',c:'Spices & Masalas',u:'g'},
+  {n:'Cumin Powder (Jeera)',c:'Spices & Masalas',u:'g'},
+  {n:'Garam Masala',c:'Spices & Masalas',u:'g'},
+  {n:'Chana Masala',c:'Spices & Masalas',u:'pack'},
+  {n:'Kitchen King Masala',c:'Spices & Masalas',u:'pack'},
+  {n:'Biryani Masala',c:'Spices & Masalas',u:'pack'},
+  {n:'Sambar Powder',c:'Spices & Masalas',u:'g'},
+  {n:'Rasam Powder',c:'Spices & Masalas',u:'g'},
+  {n:'Pav Bhaji Masala',c:'Spices & Masalas',u:'pack'},
+  {n:'Chole Masala',c:'Spices & Masalas',u:'pack'},
+  {n:'Black Pepper (Kali Mirch)',c:'Spices & Masalas',u:'g'},
+  {n:'Mustard Seeds (Rai)',c:'Spices & Masalas',u:'g'},
+  {n:'Cumin Seeds (Jeera)',c:'Spices & Masalas',u:'g'},
+  {n:'Fenugreek Seeds (Methi Dana)',c:'Spices & Masalas',u:'g'},
+  {n:'Ajwain (Carom Seeds)',c:'Spices & Masalas',u:'g'},
+  {n:'Cardamom (Elaichi)',c:'Spices & Masalas',u:'g'},
+  {n:'Cloves (Laung)',c:'Spices & Masalas',u:'g'},
+  {n:'Cinnamon (Dalchini)',c:'Spices & Masalas',u:'g'},
+  {n:'Bay Leaves (Tej Patta)',c:'Spices & Masalas',u:'pack'},
+  {n:'Asafoetida (Hing)',c:'Spices & Masalas',u:'g'},
+  {n:'Dry Mango Powder (Amchur)',c:'Spices & Masalas',u:'g'},
+  {n:'Chaat Masala',c:'Spices & Masalas',u:'g'},
+  {n:'Kashmiri Chilli Powder',c:'Spices & Masalas',u:'g'},
+  {n:'Tamarind (Imli)',c:'Spices & Masalas',u:'g'},
+
+  // Oils & Ghee
+  {n:'Sunflower Oil',c:'Oils & Ghee',u:'L'},
+  {n:'Groundnut / Peanut Oil',c:'Oils & Ghee',u:'L'},
+  {n:'Mustard Oil',c:'Oils & Ghee',u:'L'},
+  {n:'Coconut Oil',c:'Oils & Ghee',u:'L'},
+  {n:'Sesame Oil (Til)',c:'Oils & Ghee',u:'ml'},
+  {n:'Desi Ghee',c:'Oils & Ghee',u:'kg'},
+  {n:'Refined Oil',c:'Oils & Ghee',u:'L'},
+  {n:'Olive Oil',c:'Oils & Ghee',u:'ml'},
+
+  // Dairy (Indian)
+  {n:'Milk',c:'Dairy',u:'L'},
+  {n:'Paneer',c:'Dairy',u:'g'},
+  {n:'Curd / Yogurt',c:'Dairy',u:'kg'},
+  {n:'Butter',c:'Dairy',u:'g'},
+  {n:'Cream',c:'Dairy',u:'ml'},
+  {n:'Khoya / Mawa',c:'Dairy',u:'g'},
+  {n:'Condensed Milk',c:'Dairy',u:'can'},
+  {n:'Buttermilk (Chaas)',c:'Dairy',u:'L'},
+
+  // Pickles & Chutneys
+  {n:'Mango Pickle (Aam Achar)',c:'Pickles & Chutneys',u:'pack'},
+  {n:'Mixed Pickle',c:'Pickles & Chutneys',u:'pack'},
+  {n:'Lemon Pickle',c:'Pickles & Chutneys',u:'pack'},
+  {n:'Chilli Pickle',c:'Pickles & Chutneys',u:'pack'},
+  {n:'Tamarind Paste',c:'Pickles & Chutneys',u:'pack'},
+  {n:'Tomato Ketchup',c:'Pickles & Chutneys',u:'bottle'},
+  {n:'Green Chutney (Mint-Coriander)',c:'Pickles & Chutneys',u:'pack'},
+  {n:'Garlic Chutney',c:'Pickles & Chutneys',u:'pack'},
+
+  // Snacks & Namkeen
+  {n:'Mixture / Namkeen',c:'Snacks & Namkeen',u:'pack'},
+  {n:'Chakli',c:'Snacks & Namkeen',u:'pack'},
+  {n:'Mathri',c:'Snacks & Namkeen',u:'pack'},
+  {n:'Bhujia / Sev',c:'Snacks & Namkeen',u:'pack'},
+  {n:'Murukku',c:'Snacks & Namkeen',u:'pack'},
+  {n:'Papad',c:'Snacks & Namkeen',u:'pack'},
+  {n:'Khakhra',c:'Snacks & Namkeen',u:'pack'},
+  {n:'Parle-G Biscuits',c:'Snacks & Namkeen',u:'pack'},
+  {n:'Marie Biscuits',c:'Snacks & Namkeen',u:'pack'},
+  {n:'Bourbon / Hide & Seek Cookies',c:'Snacks & Namkeen',u:'pack'},
+  {n:'Maggi Noodles',c:'Snacks & Namkeen',u:'pack'},
+  {n:'Kurkure / Lays',c:'Snacks & Namkeen',u:'pack'},
+
+  // Frozen Indian
+  {n:'Frozen Samosa',c:'Frozen Indian',u:'pack'},
+  {n:'Frozen Paratha',c:'Frozen Indian',u:'pack'},
+  {n:'Dosa Batter (Fresh / Packed)',c:'Frozen Indian',u:'pack'},
+  {n:'Frozen Paneer',c:'Frozen Indian',u:'pack'},
+  {n:'Frozen Green Peas',c:'Frozen Indian',u:'pack'},
+  {n:'Frozen Corn Kernels',c:'Frozen Indian',u:'pack'},
+  {n:'Frozen Veg Biryani',c:'Frozen Indian',u:'pack'},
+  {n:'Frozen Idli',c:'Frozen Indian',u:'pack'},
+
+  // Beverages (Indian + American shared)
+  {n:'Tea (Chai Patti)',c:'Beverages',u:'g'},
+  {n:'Coffee Powder',c:'Beverages',u:'g'},
+  {n:'Bournvita / Horlicks',c:'Beverages',u:'g'},
+  {n:'Filter Coffee (Decoction)',c:'Beverages',u:'bottle'},
+  {n:'Rooh Afza',c:'Beverages',u:'bottle'},
+  {n:'Aam Panna Mix',c:'Beverages',u:'pack'},
+  {n:'Instant Coffee (Nescafé)',c:'Beverages',u:'pack'},
+  {n:'Green Tea',c:'Beverages',u:'box'},
+  {n:'Orange Juice',c:'Beverages',u:'L'},
+  {n:'Apple Juice',c:'Beverages',u:'L'},
+  {n:'Coffee Beans / Ground (American)',c:'Beverages',u:'pack'},
+  {n:'Sparkling Water',c:'Beverages',u:'pack'},
+  {n:'Soda / Cola',c:'Beverages',u:'pack'},
+  {n:'Sports Drink (Gatorade)',c:'Beverages',u:'bottle'},
+  {n:'Bottled Water',c:'Beverages',u:'pack'},
+  {n:'Coconut Water',c:'Beverages',u:'pack'},
+  {n:'Lemonade',c:'Beverages',u:'L'},
+
+  // Fresh Vegetables
+  {n:'Onion',c:'Fresh Vegetables',u:'kg'},
+  {n:'Tomato',c:'Fresh Vegetables',u:'kg'},
+  {n:'Potato',c:'Fresh Vegetables',u:'kg'},
+  {n:'Garlic',c:'Fresh Vegetables',u:'g'},
+  {n:'Ginger',c:'Fresh Vegetables',u:'g'},
+  {n:'Green Chilli',c:'Fresh Vegetables',u:'g'},
+  {n:'Capsicum / Bell Pepper',c:'Fresh Vegetables',u:'pcs'},
+  {n:'Carrot',c:'Fresh Vegetables',u:'kg'},
+  {n:'Cauliflower',c:'Fresh Vegetables',u:'pcs'},
+  {n:'Cabbage',c:'Fresh Vegetables',u:'pcs'},
+  {n:'Spinach (Palak)',c:'Fresh Vegetables',u:'bunch'},
+  {n:'Fenugreek Leaves (Methi)',c:'Fresh Vegetables',u:'bunch'},
+  {n:'Coriander (Dhania)',c:'Fresh Vegetables',u:'bunch'},
+  {n:'Brinjal (Baingan)',c:'Fresh Vegetables',u:'kg'},
+  {n:'Okra (Bhindi)',c:'Fresh Vegetables',u:'kg'},
+  {n:'French Beans',c:'Fresh Vegetables',u:'kg'},
+  {n:'Peas (Matar, Fresh)',c:'Fresh Vegetables',u:'kg'},
+  {n:'Cucumber (Kheera)',c:'Fresh Vegetables',u:'pcs'},
+  {n:'Bottle Gourd (Lauki)',c:'Fresh Vegetables',u:'pcs'},
+  {n:'Bitter Gourd (Karela)',c:'Fresh Vegetables',u:'kg'},
+  {n:'Drumstick (Moringa)',c:'Fresh Vegetables',u:'pcs'},
+  {n:'Curry Leaves',c:'Fresh Vegetables',u:'bunch'},
+  {n:'Sweet Corn',c:'Fresh Vegetables',u:'pcs'},
+  {n:'Raw Banana (Kachhe Kele)',c:'Fresh Vegetables',u:'kg'},
+
+  // Fresh Fruits
+  {n:'Banana',c:'Fresh Fruits',u:'dozen'},
+  {n:'Apple',c:'Fresh Fruits',u:'kg'},
+  {n:'Mango',c:'Fresh Fruits',u:'kg'},
+  {n:'Papaya',c:'Fresh Fruits',u:'pcs'},
+  {n:'Guava (Amrood)',c:'Fresh Fruits',u:'kg'},
+  {n:'Orange (Santra)',c:'Fresh Fruits',u:'kg'},
+  {n:'Watermelon',c:'Fresh Fruits',u:'pcs'},
+  {n:'Grapes',c:'Fresh Fruits',u:'kg'},
+  {n:'Pomegranate (Anar)',c:'Fresh Fruits',u:'pcs'},
+  {n:'Lemon',c:'Fresh Fruits',u:'pcs'},
+  {n:'Coconut',c:'Fresh Fruits',u:'pcs'},
+  {n:'Pineapple',c:'Fresh Fruits',u:'pcs'},
+  {n:'Strawberries',c:'Fresh Fruits',u:'pack'},
+  {n:'Chikoo (Sapota)',c:'Fresh Fruits',u:'kg'},
+  {n:'Kiwi',c:'Fresh Fruits',u:'pcs'},
+
+  // American — Produce
+  {n:'Romaine Lettuce',c:'Produce',u:'pcs'},
+  {n:'Baby Spinach',c:'Produce',u:'pack'},
+  {n:'Broccoli',c:'Produce',u:'pcs'},
+  {n:'Red Bell Pepper',c:'Produce',u:'pcs'},
+  {n:'Green Bell Pepper',c:'Produce',u:'pcs'},
+  {n:'Zucchini',c:'Produce',u:'pcs'},
+  {n:'Celery',c:'Produce',u:'bunch'},
+  {n:'Mushrooms (Button)',c:'Produce',u:'pack'},
+  {n:'Cherry Tomatoes',c:'Produce',u:'pack'},
+  {n:'Avocado',c:'Produce',u:'pcs'},
+  {n:'Sweet Potato',c:'Produce',u:'lb'},
+  {n:'Asparagus',c:'Produce',u:'bunch'},
+  {n:'Kale',c:'Produce',u:'bunch'},
+  {n:'Brussels Sprouts',c:'Produce',u:'pack'},
+  {n:'Blueberries',c:'Produce',u:'pack'},
+  {n:'Raspberries',c:'Produce',u:'pack'},
+  {n:'Green Onions / Scallions',c:'Produce',u:'bunch'},
+
+  // Meat & Seafood
+  {n:'Chicken Breast',c:'Meat & Seafood',u:'lb'},
+  {n:'Ground Beef',c:'Meat & Seafood',u:'lb'},
+  {n:'Salmon Fillet',c:'Meat & Seafood',u:'lb'},
+  {n:'Pork Chops',c:'Meat & Seafood',u:'lb'},
+  {n:'Ground Turkey',c:'Meat & Seafood',u:'lb'},
+  {n:'Shrimp',c:'Meat & Seafood',u:'lb'},
+  {n:'Bacon',c:'Meat & Seafood',u:'pack'},
+  {n:'Chicken Thighs',c:'Meat & Seafood',u:'lb'},
+  {n:'Beef Steak',c:'Meat & Seafood',u:'lb'},
+  {n:'Tilapia',c:'Meat & Seafood',u:'lb'},
+  {n:'Sausages',c:'Meat & Seafood',u:'pack'},
+  {n:'Deli Turkey (Sliced)',c:'Meat & Seafood',u:'pack'},
+
+  // Dairy & Eggs
+  {n:'Eggs (Large)',c:'Dairy & Eggs',u:'dozen'},
+  {n:'Whole Milk',c:'Dairy & Eggs',u:'L'},
+  {n:'2% Milk',c:'Dairy & Eggs',u:'L'},
+  {n:'Almond Milk',c:'Dairy & Eggs',u:'L'},
+  {n:'Oat Milk',c:'Dairy & Eggs',u:'L'},
+  {n:'Cheddar Cheese',c:'Dairy & Eggs',u:'pack'},
+  {n:'Mozzarella',c:'Dairy & Eggs',u:'pack'},
+  {n:'Greek Yogurt',c:'Dairy & Eggs',u:'pack'},
+  {n:'Sour Cream',c:'Dairy & Eggs',u:'pack'},
+  {n:'Heavy Cream',c:'Dairy & Eggs',u:'ml'},
+  {n:'Cream Cheese',c:'Dairy & Eggs',u:'pack'},
+  {n:'Parmesan Cheese',c:'Dairy & Eggs',u:'pack'},
+  {n:'Butter (Salted)',c:'Dairy & Eggs',u:'pack'},
+
+  // Bread & Bakery
+  {n:'White Sandwich Bread',c:'Bread & Bakery',u:'loaf'},
+  {n:'Whole Wheat Bread',c:'Bread & Bakery',u:'loaf'},
+  {n:'Sourdough Bread',c:'Bread & Bakery',u:'loaf'},
+  {n:'Bagels',c:'Bread & Bakery',u:'pack'},
+  {n:'English Muffins',c:'Bread & Bakery',u:'pack'},
+  {n:'Flour Tortillas',c:'Bread & Bakery',u:'pack'},
+  {n:'Corn Tortillas',c:'Bread & Bakery',u:'pack'},
+  {n:'Dinner Rolls',c:'Bread & Bakery',u:'pack'},
+  {n:'Hamburger Buns',c:'Bread & Bakery',u:'pack'},
+  {n:'Pita Bread',c:'Bread & Bakery',u:'pack'},
+
+  // Frozen (American)
+  {n:'Frozen Pizza',c:'Frozen',u:'pcs'},
+  {n:'Frozen Waffles',c:'Frozen',u:'box'},
+  {n:'Frozen Burritos',c:'Frozen',u:'pack'},
+  {n:'Ice Cream',c:'Frozen',u:'pcs'},
+  {n:'Frozen Mixed Vegetables',c:'Frozen',u:'pack'},
+  {n:'Frozen Fish Sticks',c:'Frozen',u:'box'},
+  {n:'Chicken Nuggets (Frozen)',c:'Frozen',u:'pack'},
+  {n:'Frozen Edamame',c:'Frozen',u:'pack'},
+  {n:'Frozen Mac & Cheese',c:'Frozen',u:'pack'},
+
+  // Canned & Dry Goods
+  {n:'Spaghetti',c:'Canned & Dry Goods',u:'pack'},
+  {n:'Penne Pasta',c:'Canned & Dry Goods',u:'pack'},
+  {n:'White Rice (Long Grain)',c:'Canned & Dry Goods',u:'lb'},
+  {n:'Canned Diced Tomatoes',c:'Canned & Dry Goods',u:'can'},
+  {n:'Canned Black Beans',c:'Canned & Dry Goods',u:'can'},
+  {n:'Canned Chickpeas',c:'Canned & Dry Goods',u:'can'},
+  {n:'Chicken Broth',c:'Canned & Dry Goods',u:'can'},
+  {n:'Tomato Soup',c:'Canned & Dry Goods',u:'can'},
+  {n:'Peanut Butter',c:'Canned & Dry Goods',u:'bottle'},
+  {n:'Strawberry Jam / Jelly',c:'Canned & Dry Goods',u:'bottle'},
+  {n:'Oatmeal',c:'Canned & Dry Goods',u:'box'},
+  {n:'Corn Flakes Cereal',c:'Canned & Dry Goods',u:'box'},
+  {n:'Pancake Mix',c:'Canned & Dry Goods',u:'box'},
+  {n:'All-purpose Flour',c:'Canned & Dry Goods',u:'lb'},
+  {n:'White Sugar',c:'Canned & Dry Goods',u:'lb'},
+  {n:'Brown Sugar',c:'Canned & Dry Goods',u:'lb'},
+  {n:'Honey',c:'Canned & Dry Goods',u:'bottle'},
+  {n:'Canned Tuna',c:'Canned & Dry Goods',u:'can'},
+  {n:'Lentils (Green / French)',c:'Canned & Dry Goods',u:'lb'},
+
+  // Snacks (American)
+  {n:'Potato Chips',c:'Snacks',u:'pack'},
+  {n:'Tortilla Chips',c:'Snacks',u:'pack'},
+  {n:'Popcorn',c:'Snacks',u:'pack'},
+  {n:'Pretzels',c:'Snacks',u:'pack'},
+  {n:'Granola Bars',c:'Snacks',u:'box'},
+  {n:'Trail Mix',c:'Snacks',u:'pack'},
+  {n:'Crackers (Saltines)',c:'Snacks',u:'box'},
+  {n:'Cookies (Oreo / Chips Ahoy)',c:'Snacks',u:'pack'},
+  {n:'Almonds',c:'Snacks',u:'pack'},
+  {n:'Cashews',c:'Snacks',u:'pack'},
+
+  // Condiments
+  {n:'Ketchup',c:'Condiments',u:'bottle'},
+  {n:'Mustard (Yellow)',c:'Condiments',u:'bottle'},
+  {n:'Mayonnaise',c:'Condiments',u:'bottle'},
+  {n:'Ranch Dressing',c:'Condiments',u:'bottle'},
+  {n:'BBQ Sauce',c:'Condiments',u:'bottle'},
+  {n:'Soy Sauce',c:'Condiments',u:'bottle'},
+  {n:'Hot Sauce',c:'Condiments',u:'bottle'},
+  {n:'White Vinegar',c:'Condiments',u:'bottle'},
+  {n:'Apple Cider Vinegar',c:'Condiments',u:'bottle'},
+  {n:'Salsa',c:'Condiments',u:'bottle'},
+  {n:'Pasta Sauce (Marinara)',c:'Condiments',u:'bottle'},
+  {n:'Worcestershire Sauce',c:'Condiments',u:'bottle'},
+
+  // Household
+  {n:'Paper Towels',c:'Household',u:'pack'},
+  {n:'Toilet Paper',c:'Household',u:'pack'},
+  {n:'Dish Soap',c:'Household',u:'bottle'},
+  {n:'Laundry Detergent',c:'Household',u:'bottle'},
+  {n:'Trash Bags',c:'Household',u:'pack'},
+  {n:'Aluminum Foil',c:'Household',u:'pack'},
+  {n:'Plastic Wrap',c:'Household',u:'pack'},
+  {n:'Ziplock Bags',c:'Household',u:'box'},
+  {n:'Paper Plates',c:'Household',u:'pack'},
+  {n:'Napkins / Tissue',c:'Household',u:'pack'},
+
+  // Personal Care
+  {n:'Shampoo',c:'Personal Care',u:'bottle'},
+  {n:'Conditioner',c:'Personal Care',u:'bottle'},
+  {n:'Body Wash / Soap',c:'Personal Care',u:'bottle'},
+  {n:'Toothpaste',c:'Personal Care',u:'pcs'},
+  {n:'Toothbrush',c:'Personal Care',u:'pcs'},
+  {n:'Deodorant',c:'Personal Care',u:'pcs'},
+  {n:'Face Wash',c:'Personal Care',u:'bottle'},
+  {n:'Moisturizer / Lotion',c:'Personal Care',u:'bottle'},
+  {n:'Razor',c:'Personal Care',u:'pcs'},
+  {n:'Sunscreen',c:'Personal Care',u:'bottle'},
+  {n:'Hand Wash',c:'Personal Care',u:'bottle'},
+  {n:'Sanitary Pads / Tampons',c:'Personal Care',u:'pack'},
+
+  // Cleaning
+  {n:'All-Purpose Cleaner',c:'Cleaning',u:'bottle'},
+  {n:'Bathroom Cleaner',c:'Cleaning',u:'bottle'},
+  {n:'Glass Cleaner',c:'Cleaning',u:'bottle'},
+  {n:'Sponges',c:'Cleaning',u:'pack'},
+  {n:'Bleach',c:'Cleaning',u:'bottle'},
+  {n:'Floor Cleaner / Phenyl',c:'Cleaning',u:'bottle'},
+  {n:'Dishwasher Pods',c:'Cleaning',u:'pack'},
+  {n:'Scrub Pad / Steel Wool',c:'Cleaning',u:'pack'},
+
+  // Baby & Pet
+  {n:'Baby Diapers',c:'Baby & Pet',u:'pack'},
+  {n:'Baby Wipes',c:'Baby & Pet',u:'pack'},
+  {n:'Baby Formula',c:'Baby & Pet',u:'can'},
+  {n:'Baby Shampoo',c:'Baby & Pet',u:'bottle'},
+  {n:'Dog Food (Dry)',c:'Baby & Pet',u:'pack'},
+  {n:'Cat Food',c:'Baby & Pet',u:'pack'},
+  {n:'Pet Treats',c:'Baby & Pet',u:'pack'},
+];
+
+// ── Service Worker ──────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ── Data ────────────────────────────────────────────────────────────────────
+const STORE_KEY = 'cs_v1';
+let D = load();
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) {
+      const d = JSON.parse(raw);
+      if (d && Array.isArray(d.lists)) return d;
+    }
+  } catch(_) {}
+  return { lists: [], nextId: 1, activeListId: null };
+}
+
+function save() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(D)); } catch(_) {}
+}
+
+function uid() { return D.nextId++; }
+
+// ── Tab navigation ──────────────────────────────────────────────────────────
+let currentTab = 'lists';
+
+function showTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + tab).classList.add('active');
+  document.getElementById('nav-' + tab).classList.add('active');
+  const fab = document.getElementById('fab');
+  if (tab === 'lists') {
+    fab.style.display = 'flex';
+    fab.onclick = openNewListSheet;
+    fab.title = 'New list';
+  } else if (tab === 'shop' && D.activeListId) {
+    fab.style.display = 'flex';
+    fab.onclick = openAddItemSheet;
+    fab.title = 'Add item';
+  } else {
+    fab.style.display = 'none';
+  }
+  if (tab === 'settings') renderSettings();
+}
+
+// ── Sheets ──────────────────────────────────────────────────────────────────
+function openNewListSheet() {
+  document.getElementById('inp-listname').value = '';
+  document.getElementById('overlay-newlist').classList.add('open');
+  setTimeout(() => document.getElementById('inp-listname').focus(), 80);
+}
+
+function closeSheet(name) {
+  document.getElementById('overlay-' + name).classList.remove('open');
+}
+
+function closeAllSheets() {
+  document.querySelectorAll('.overlay.open').forEach(o => o.classList.remove('open'));
+}
+
+// ── Create list ──────────────────────────────────────────────────────────────
+function createList() {
+  const name = document.getElementById('inp-listname').value.trim();
+  if (!name) return;
+  const list = { id: uid(), name, createdAt: Date.now(), items: [] };
+  D.lists.unshift(list);
+  save();
+  closeSheet('newlist');
+  renderLists();
+}
+
+// ── Render lists ─────────────────────────────────────────────────────────────
+const LIST_ICONS = ['🛒','🥗','🧊','🥬','🍗','🧴','🏠','🎉','🌿','🥛','🍎','🌾','🥩','🧀','🍞'];
+
+function renderLists() {
+  const empty = document.getElementById('lists-empty');
+  const card  = document.getElementById('lists-card');
+
+  if (D.lists.length === 0) {
+    empty.style.display = 'flex';
+    card.style.display  = 'none';
+    return;
+  }
+
+  empty.style.display = 'none';
+  card.style.display  = 'block';
+
+  card.innerHTML = D.lists.map((list, i) => {
+    const total   = list.items ? list.items.length : 0;
+    const pending = list.items ? list.items.filter(it => !it.checked).length : 0;
+    const icon    = LIST_ICONS[i % LIST_ICONS.length];
+    const isActive = list.id === D.activeListId;
+    const badge   = pending > 0
+      ? `<span class="row-badge">${pending}</span>`
+      : (total > 0 ? `<span style="color:var(--green);font-size:18px;">✓</span>` : `<span style="color:var(--gray4);font-size:18px;">›</span>`);
+    const sub = total === 0
+      ? 'Empty — tap to add items'
+      : `${pending} of ${total} item${total !== 1 ? 's' : ''} remaining`;
+    return `<div class="row${isActive ? ' is-active' : ''}" data-id="${list.id}"
+        onclick="openList(${list.id})"
+        oncontextmenu="openActionSheet(${list.id},event)">
+      <span class="row-icon">${icon}</span>
+      <div class="row-body">
+        <div class="row-label">${esc(list.name)}${isActive ? ' <span style="font-size:11px;color:var(--green);font-weight:500;">● active</span>' : ''}</div>
+        <div class="row-sub">${sub}</div>
+      </div>
+      <div class="row-right" style="display:flex;align-items:center;gap:6px;">
+        ${badge}
+        <button class="more-btn" onclick="openActionSheet(${list.id},event)" title="Options">⋯</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Long-press detection for touch devices
+  card.querySelectorAll('.row[data-id]').forEach(row => {
+    let timer = null;
+    row.addEventListener('touchstart', e => {
+      const id = +row.dataset.id;
+      timer = setTimeout(() => { timer = null; openActionSheet(id, e); }, 500);
+    }, { passive: true });
+    row.addEventListener('touchend',   () => { if (timer) clearTimeout(timer); });
+    row.addEventListener('touchmove',  () => { if (timer) clearTimeout(timer); });
+  });
+}
+
+// ── Open list into Shop tab ──────────────────────────────────────────────────
+function openList(id) {
+  const list = D.lists.find(l => l.id === id);
+  if (!list) return;
+  D.activeListId = id;
+  save();
+  renderLists();
+  document.getElementById('shop-title').textContent = list.name;
+  document.getElementById('shop-share-btn').style.display = 'block';
+  renderShopItems(list);
+  showTab('shop');
+}
+
+// ── Action sheet ─────────────────────────────────────────────────────────────
+let actionTargetId = null;
+
+function openActionSheet(id, e) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  actionTargetId = id;
+  const list = D.lists.find(l => l.id === id);
+  if (!list) return;
+  document.getElementById('action-title').textContent = list.name;
+  closeAllSheets();
+  document.getElementById('overlay-action').classList.add('open');
+}
+
+function actionOpen() {
+  closeSheet('action');
+  if (actionTargetId) openList(actionTargetId);
+}
+
+function actionRename() {
+  closeSheet('action');
+  openRenameSheet(actionTargetId);
+}
+
+function actionDuplicate() {
+  closeSheet('action');
+  const src = D.lists.find(l => l.id === actionTargetId);
+  if (!src) return;
+  const copy = {
+    id: uid(),
+    name: src.name + ' (copy)',
+    createdAt: Date.now(),
+    items: src.items.map(it => ({ ...it, id: uid(), checked: false }))
+  };
+  const idx = D.lists.findIndex(l => l.id === actionTargetId);
+  D.lists.splice(idx + 1, 0, copy);
+  save();
+  renderLists();
+}
+
+function actionDelete() {
+  closeSheet('action');
+  const list = D.lists.find(l => l.id === actionTargetId);
+  if (!list) return;
+  const label = list.items && list.items.length > 0
+    ? `Delete "${list.name}"? It has ${list.items.length} item${list.items.length !== 1 ? 's' : ''}.`
+    : `Delete "${list.name}"?`;
+  if (!confirm(label)) return;
+  D.lists = D.lists.filter(l => l.id !== actionTargetId);
+  if (D.activeListId === actionTargetId) D.activeListId = null;
+  save();
+  renderLists();
+  if (D.activeListId === null) {
+    document.getElementById('shop-title').textContent = 'Shopping';
+    document.getElementById('shop-body').innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">🥦</div>
+        <div class="empty-title">No list open</div>
+        <div class="empty-sub">Open a list from <strong>My Lists</strong> to start shopping</div>
+      </div>`;
+  }
+}
+
+// ── Rename ───────────────────────────────────────────────────────────────────
+function openRenameSheet(id) {
+  const list = D.lists.find(l => l.id === id);
+  if (!list) return;
+  actionTargetId = id;
+  const inp = document.getElementById('inp-rename');
+  inp.value = list.name;
+  document.getElementById('overlay-rename').classList.add('open');
+  setTimeout(() => { inp.focus(); inp.select(); }, 80);
+}
+
+function commitRename() {
+  const name = document.getElementById('inp-rename').value.trim();
+  if (!name) return;
+  const list = D.lists.find(l => l.id === actionTargetId);
+  if (!list) return;
+  list.name = name;
+  save();
+  closeSheet('rename');
+  renderLists();
+  if (D.activeListId === actionTargetId) {
+    document.getElementById('shop-title').textContent = name;
+  }
+}
+
+// ── Category icons (for share text) ──────────────────────────────────────────
+const CAT_ICONS = {
+  'Atta & Grains':'🌾','Dals & Pulses':'🫘','Rice':'🍚',
+  'Spices & Masalas':'🌶️','Oils & Ghee':'🫙','Dairy':'🥛',
+  'Pickles & Chutneys':'🥒','Snacks & Namkeen':'🍿',
+  'Frozen Indian':'🧊','Beverages':'☕',
+  'Fresh Vegetables':'🥬','Fresh Fruits':'🍎',
+  'Produce':'🥗','Meat & Seafood':'🥩','Dairy & Eggs':'🥚',
+  'Bread & Bakery':'🍞','Frozen':'❄️','Canned & Dry Goods':'🥫',
+  'Snacks':'🍟','Condiments':'🧴','Household':'🏠',
+  'Personal Care':'🧼','Cleaning':'🧹','Baby & Pet':'🐾','Other':'📦'
+};
+
+// ── Share ─────────────────────────────────────────────────────────────────────
+function shareList() {
+  const list = D.lists.find(l => l.id === D.activeListId);
+  if (!list) return;
+  const unchecked = list.items.filter(it => !it.checked);
+  if (unchecked.length === 0) { showToast('Nothing left — all items are done!'); return; }
+
+  // Build human-readable text
+  const grouped = {};
+  unchecked.forEach(it => {
+    const c = it.category || 'Other';
+    if (!grouped[c]) grouped[c] = [];
+    grouped[c].push(it);
+  });
+  const sortedCats = [...CATS.filter(c => grouped[c]), ...Object.keys(grouped).filter(c => !CATS.includes(c))];
+  let text = `📋 ${list.name} — ${unchecked.length} item${unchecked.length !== 1 ? 's' : ''}\n\n`;
+  sortedCats.forEach(cat => {
+    text += `${CAT_ICONS[cat] || '📦'} ${cat}\n`;
+    grouped[cat].forEach(it => { text += `  • ${it.name} — ${it.qty} ${it.unit}\n`; });
+    text += '\n';
+  });
+  text += 'Sent from CartSmart 🛒';
+
+  // Build URL hash payload (works once deployed to GitHub Pages)
+  let shareUrl = window.location.href.split('#')[0];
+  try {
+    const payload = { n: list.name, i: unchecked.map(it => ({ n: it.name, c: it.category, q: it.qty, u: it.unit })) };
+    shareUrl += '#share=' + btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  } catch(_) {}
+
+  if (navigator.share) {
+    navigator.share({ title: `CartSmart: ${list.name}`, text, url: shareUrl }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(text)
+      .then(() => showToast('List copied — paste in WhatsApp or iMessage'))
+      .catch(() => { prompt('Copy this list:', text); });
+  }
+}
+
+// ── Import from URL hash ──────────────────────────────────────────────────────
+let importPayload = null;
+
+function checkShareHash() {
+  const hash = window.location.hash;
+  if (!hash.startsWith('#share=')) return;
+  try {
+    const json = decodeURIComponent(escape(atob(hash.slice(7))));
+    const p = JSON.parse(json);
+    if (p && p.n && Array.isArray(p.i)) {
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+      showImportSheet(p);
+    }
+  } catch(_) {}
+}
+
+function showImportSheet(payload) {
+  importPayload = payload;
+  const total   = payload.i.length;
+  const preview = payload.i.slice(0, 6).map(it =>
+    `<div style="padding:10px 16px;border-bottom:0.5px solid var(--gray5);font-size:14px;">
+       ${esc(it.n)} <span style="color:var(--gray1);">— ${it.q} ${it.u}</span>
+     </div>`
+  ).join('');
+  const more = total > 6 ? `<div style="padding:10px 16px;font-size:13px;color:var(--gray1);">…and ${total - 6} more</div>` : '';
+  document.getElementById('import-body').innerHTML = `
+    <div style="padding:12px 16px 8px;">
+      <span style="font-size:16px;font-weight:600;color:var(--text);">${esc(payload.n)}</span>
+      <span style="margin-left:8px;font-size:13px;color:var(--gray1);">${total} item${total !== 1 ? 's' : ''}</span>
+    </div>
+    <div class="card" style="margin:0 16px 12px;">${preview}${more}</div>`;
+  document.getElementById('overlay-import').classList.add('open');
+}
+
+function importSharedList() {
+  if (!importPayload) return;
+  const list = {
+    id: uid(), name: importPayload.n + ' (shared)',
+    createdAt: Date.now(),
+    items: importPayload.i.map(it => ({
+      id: uid(), name: it.n, category: it.c || 'Other',
+      qty: it.q || 1, unit: it.u || 'pcs',
+      checked: false, addedAt: Date.now()
+    }))
+  };
+  D.lists.unshift(list);
+  save();
+  closeSheet('import');
+  renderLists();
+  showToast(`"${list.name}" saved!`);
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+let toastTimer = null;
+function showToast(msg, ms = 2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), ms);
+}
+
+// ── Add Item ──────────────────────────────────────────────────────────────────
+let addUnit = 'pcs';
+
+function openAddItemSheet() {
+  if (!D.activeListId) { alert('Open a list first from My Lists.'); return; }
+  const inp = document.getElementById('add-search-inp');
+  inp.value = '';
+  addUnit = 'pcs';
+  document.getElementById('search-clear').style.display = 'none';
+  document.getElementById('add-results').innerHTML = `<div class="add-hint">Type to search 300+ Indian &amp; American items<br>or enter any name to add it manually</div>`;
+  document.getElementById('qty-inp').value = '1';
+  renderUnitChips('pcs');
+  document.getElementById('overlay-additem').classList.add('open');
+  setTimeout(() => inp.focus(), 80);
+}
+
+function clearSearch() {
+  const inp = document.getElementById('add-search-inp');
+  inp.value = '';
+  inp.focus();
+  document.getElementById('search-clear').style.display = 'none';
+  document.getElementById('add-results').innerHTML = `<div class="add-hint">Type to search 300+ Indian &amp; American items<br>or enter any name to add it manually</div>`;
+}
+
+function onAddSearchInput() {
+  const q = document.getElementById('add-search-inp').value;
+  document.getElementById('search-clear').style.display = q ? 'block' : 'none';
+  if (!q) {
+    document.getElementById('add-results').innerHTML = `<div class="add-hint">Type to search 300+ Indian &amp; American items<br>or enter any name to add it manually</div>`;
+    return;
+  }
+  showAddResults(q);
+}
+
+function filterDB(q) {
+  const lq = q.toLowerCase();
+  const starts   = DB.filter(it => it.n.toLowerCase().startsWith(lq));
+  const contains = DB.filter(it => !it.n.toLowerCase().startsWith(lq) && it.n.toLowerCase().includes(lq));
+  return [...starts, ...contains].slice(0, 10);
+}
+
+function showAddResults(q) {
+  const results = filterDB(q);
+  const re = new RegExp(`(${escRe(q)})`, 'gi');
+  let html = results.map(it => {
+    const highlighted = esc(it.n).replace(re, '<mark>$1</mark>');
+    return `<div class="add-result-row" onclick="selectSuggestion(${JSON.stringify(it.n)},${JSON.stringify(it.c)},${JSON.stringify(it.u)})">
+      <div>
+        <div class="add-result-name">${highlighted}</div>
+        <div class="add-result-cat">${esc(it.c)}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const qEsc = esc(q);
+  if (results.length === 0) {
+    html = `<div class="add-manual-row" onclick="pickManual()">
+      <span style="font-size:20px">＋</span> Add "<strong>${qEsc}</strong>" to list
+    </div>`;
+  } else {
+    html += `<div class="add-manual-row" onclick="pickManual()">
+      <span style="font-size:17px">✏️</span> Add "<strong>${qEsc}</strong>" as custom item
+    </div>`;
+  }
+  document.getElementById('add-results').innerHTML = html;
+}
+
+function selectSuggestion(name, cat, unit) {
+  document.getElementById('add-search-inp').value = name;
+  document.getElementById('search-clear').style.display = 'block';
+  addUnit = unit;
+  renderUnitChips(unit);
+  document.getElementById('add-results').innerHTML =
+    `<div style="padding:12px 16px;font-size:13px;color:var(--gray1);">Category: <strong style="color:var(--text2)">${esc(cat)}</strong></div>`;
+  document.getElementById('qty-inp').focus();
+  document.getElementById('qty-inp').select();
+}
+
+function pickManual() {
+  const q = document.getElementById('add-search-inp').value.trim();
+  if (!q) return;
+  document.getElementById('add-results').innerHTML =
+    `<div style="padding:12px 16px;font-size:13px;color:var(--gray1);">Adding <strong style="color:var(--text2)">"${esc(q)}"</strong> as a custom item</div>`;
+  document.getElementById('qty-inp').focus();
+  document.getElementById('qty-inp').select();
+}
+
+function renderUnitChips(selected) {
+  addUnit = selected;
+  document.getElementById('unit-chips').innerHTML = UNITS.map(u =>
+    `<div class="unit-chip${u === selected ? ' active' : ''}" onclick="selectUnit('${u}')">${u}</div>`
+  ).join('');
+  setTimeout(() => {
+    const active = document.querySelector('.unit-chip.active');
+    if (active) active.scrollIntoView({ inline: 'center', behavior: 'smooth', block: 'nearest' });
+  }, 60);
+}
+
+function selectUnit(u) { renderUnitChips(u); }
+
+function addItem() {
+  const name = document.getElementById('add-search-inp').value.trim();
+  if (!name) { document.getElementById('add-search-inp').focus(); return; }
+  const qty  = parseFloat(document.getElementById('qty-inp').value) || 1;
+  const list = D.lists.find(l => l.id === D.activeListId);
+  if (!list) return;
+  const dbMatch = DB.find(it => it.n.toLowerCase() === name.toLowerCase());
+  list.items.push({ id: uid(), name, category: dbMatch ? dbMatch.c : 'Other', qty, unit: addUnit, checked: false, addedAt: Date.now() });
+  save();
+  renderShopItems(list);
+  renderLists();
+  // Clear for rapid-fire adding
+  const inp = document.getElementById('add-search-inp');
+  inp.value = '';
+  inp.focus();
+  document.getElementById('search-clear').style.display = 'none';
+  document.getElementById('qty-inp').value = '1';
+  addUnit = 'pcs';
+  renderUnitChips('pcs');
+  document.getElementById('add-results').innerHTML = `<div class="add-hint" style="padding:16px;font-size:13px;color:var(--green);text-align:center;">✓ Added! Keep going or tap ✕ to close</div>`;
+}
+
+// ── Render Shop Items ─────────────────────────────────────────────────────────
+function renderShopItems(list) {
+  const el      = document.getElementById('shop-body');
+  const total   = list.items.length;
+  const done    = list.items.filter(it => it.checked).length;
+  const pending = total - done;
+  const pct     = total > 0 ? Math.round((done / total) * 100) : 0;
+
+  if (total === 0) {
+    el.innerHTML = `<div class="empty">
+      <div class="empty-icon">🛒</div>
+      <div class="empty-title">List is empty</div>
+      <div class="empty-sub">Tap <strong>+</strong> to add your first item</div>
+    </div>`;
+    updateShopBadge(0);
+    return;
+  }
+
+  // All done — celebration
+  if (pending === 0) {
+    el.innerHTML = `
+      <div class="progress-wrap"><div class="progress-bar" style="width:100%"></div></div>
+      <div class="all-done-card">
+        <div class="all-done-emoji">🎉</div>
+        <div class="all-done-title">All done!</div>
+        <div class="all-done-sub">You got everything on the list.<br>Great shopping!</div>
+        <button class="btn btn-primary" style="width:100%;" onclick="clearChecked()">Clear &amp; Start Fresh</button>
+      </div>`;
+    updateShopBadge(0);
+    renderLists();
+    return;
+  }
+
+  // Split: unchecked grouped by category, checked collapsed at bottom
+  const unchecked = list.items.filter(it => !it.checked);
+  const checked   = list.items.filter(it => it.checked);
+  const grouped   = {};
+  unchecked.forEach(it => {
+    const c = it.category || 'Other';
+    if (!grouped[c]) grouped[c] = [];
+    grouped[c].push(it);
+  });
+  const sortedCats = [
+    ...CATS.filter(c => grouped[c]),
+    ...Object.keys(grouped).filter(c => !CATS.includes(c))
+  ];
+
+  let html = `
+    <div class="progress-wrap">
+      <div class="progress-bar" style="width:${pct}%"></div>
+    </div>
+    <div class="shop-summary">
+      <span class="shop-summary-text">${pending} of ${total} remaining</span>
+      ${done > 0 ? `<button class="clear-done-btn" onclick="clearChecked()">Clear done (${done})</button>` : ''}
+    </div>`;
+
+  sortedCats.forEach(cat => {
+    html += `<div class="section" style="margin-bottom:14px;">
+      <div class="cat-label">${esc(cat)}</div>
+      <div class="card">`;
+    grouped[cat].forEach(it => { html += shopRow(it); });
+    html += `</div></div>`;
+  });
+
+  if (checked.length > 0) {
+    html += `<div class="section" style="margin-bottom:20px;">
+      <div class="cat-label" style="color:var(--gray4);">Done (${checked.length})</div>
+      <div class="card">`;
+    checked.forEach(it => { html += shopRow(it); });
+    html += `</div></div>`;
+  }
+
+  el.innerHTML = html;
+  updateShopBadge(pending);
+}
+
+function shopRow(it) {
+  return `<div class="shop-item${it.checked ? ' done' : ''}" id="si-${it.id}">
+    <div class="shop-tap" onclick="toggleCheck(${it.id})">
+      <div class="item-check"></div>
+      <div style="flex:1;min-width:0;">
+        <div class="item-name">${esc(it.name)}</div>
+        <div class="item-qty">${it.qty} ${it.unit}</div>
+      </div>
+    </div>
+    <button class="item-del" onclick="deleteItem(${it.id})" title="Remove">✕</button>
+  </div>`;
+}
+
+function toggleCheck(itemId) {
+  const list = D.lists.find(l => l.id === D.activeListId);
+  if (!list) return;
+  const item = list.items.find(it => it.id === itemId);
+  if (!item) return;
+  item.checked = !item.checked;
+  save();
+  renderShopItems(list);
+  renderLists();
+}
+
+function deleteItem(itemId) {
+  const list = D.lists.find(l => l.id === D.activeListId);
+  if (!list) return;
+  list.items = list.items.filter(it => it.id !== itemId);
+  save();
+  renderShopItems(list);
+  renderLists();
+}
+
+function clearChecked() {
+  const list = D.lists.find(l => l.id === D.activeListId);
+  if (!list) return;
+  list.items = list.items.filter(it => !it.checked);
+  save();
+  renderShopItems(list);
+  renderLists();
+}
+
+function updateShopBadge(count) {
+  const badge = document.getElementById('shop-badge');
+  if (!badge) return;
+  if (count > 0) {
+    badge.textContent = count > 99 ? '99+' : count;
+    badge.style.display = 'block';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// ── Settings ─────────────────────────────────────────────────────────────────
+function renderSettings() {
+  const totalItems = D.lists.reduce((n, l) => n + (l.items ? l.items.length : 0), 0);
+  document.getElementById('stats-lists').textContent = D.lists.length;
+  document.getElementById('stats-items').textContent = totalItems;
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(D, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `CartSmart_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData() {
+  const inp = document.createElement('input');
+  inp.type   = 'file';
+  inp.accept = '.json';
+  inp.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const parsed = JSON.parse(ev.target.result);
+        if (!parsed || !Array.isArray(parsed.lists)) throw new Error('bad format');
+        D = parsed;
+        save();
+        renderLists();
+        renderSettings();
+        alert('Backup restored — all your lists are back.');
+      } catch(_) {
+        alert('Could not read this file. Make sure it\'s a CartSmart JSON backup.');
+      }
+    };
+    reader.readAsText(file);
+  };
+  inp.click();
+}
+
+function clearAllData() {
+  if (!confirm('Delete everything — all lists and all items? This cannot be undone.')) return;
+  D = { lists: [], nextId: 1, activeListId: null };
+  save();
+  renderLists();
+  renderSettings();
+}
+
+// ── Keyboard shortcuts ────────────────────────────────────────────────────────
+document.getElementById('inp-listname').addEventListener('keydown', e => {
+  if (e.key === 'Enter') createList();
+});
+document.getElementById('inp-rename').addEventListener('keydown', e => {
+  if (e.key === 'Enter') commitRename();
+});
+document.getElementById('qty-inp').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addItem();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeAllSheets();
+});
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function esc(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function escRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+renderLists();
+if (D.activeListId) {
+  const active = D.lists.find(l => l.id === D.activeListId);
+  if (active) {
+    document.getElementById('shop-title').textContent = active.name;
+    document.getElementById('shop-share-btn').style.display = 'block';
+    const pending = active.items.filter(it => !it.checked).length;
+    updateShopBadge(pending);
+  }
+}
+checkShareHash();
+</script>
+</body>
+</html>
