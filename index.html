@@ -14,23 +14,23 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --green:    #1E8C45;
-      --green-dk: #145E2E;
-      --green-lt: #E5F5EC;
-      --red:      #C0392B;
-      --orange:   #D4680A;
-      --blue:     #1A56A8;
-      --gray1:    #505050;
-      --gray2:    #6E6E6E;
-      --gray3:    #9A9A9A;
-      --gray4:    #C2C2C2;
-      --gray5:    #E6E6E6;
-      --gray6:    #F4F4F4;
-      --text:     #111111;
-      --text2:    #222222;
-      --text3:    #444444;
-      --bg:       #F2F6EF;
-      --card:     #FFFFFF;
+      --green:    #4ADE80;
+      --green-dk: #86EFAC;
+      --green-lt: rgba(74,222,128,0.12);
+      --red:      #F87171;
+      --orange:   #FB923C;
+      --blue:     #67B2FF;
+      --gray1:    #9DC9AA;
+      --gray2:    #6EA882;
+      --gray3:    #3E6E50;
+      --gray4:    #244935;
+      --gray5:    #192E22;
+      --gray6:    #0F1E16;
+      --text:     #F0FDF4;
+      --text2:    #DCFCE7;
+      --text3:    #BBF7D0;
+      --bg:       #0C1711;
+      --card:     #132018;
       --safe-top: env(safe-area-inset-top, 0px);
       --safe-bot: env(safe-area-inset-bottom, 0px);
       --nav-h:    72px;
@@ -77,15 +77,18 @@
       font-size: 34px;
       font-weight: 900;
       letter-spacing: -0.5px;
-      color: var(--green-dk);
+      background: linear-gradient(135deg, #4ADE80 0%, #22D3EE 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
     .ph-action {
       border: none;
-      background: var(--green);
+      background: linear-gradient(135deg, #4ADE80 0%, #22D3EE 100%);
       cursor: pointer;
       font-size: 16px;
       font-weight: 800;
-      color: #fff;
+      color: #0C1711;
       -webkit-tap-highlight-color: transparent;
       padding: 9px 18px;
       border-radius: 22px;
@@ -95,11 +98,11 @@
 
     /* ── Bottom nav ── */
     #nav {
-      background: #fff;
-      border-top: 2px solid var(--gray5);
+      background: var(--card);
+      border-top: 1.5px solid var(--gray5);
       display: flex;
       padding-bottom: var(--safe-bot);
-      box-shadow: 0 -3px 16px rgba(0,0,0,0.07);
+      box-shadow: 0 -4px 24px rgba(0,0,0,0.35);
     }
     .nav-btn {
       flex: 1;
@@ -170,17 +173,17 @@
       right: 20px;
       width: 64px; height: 64px;
       border-radius: 50%;
-      background: var(--green);
-      border: none; color: #fff;
+      background: linear-gradient(135deg, #4ADE80 0%, #22D3EE 100%);
+      border: none; color: #0C1711;
       font-size: 36px; line-height: 1;
       display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 6px 24px rgba(30,140,69,0.48);
+      box-shadow: 0 6px 28px rgba(74,222,128,0.55);
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
       transition: transform 0.1s, box-shadow 0.1s;
       z-index: 10;
     }
-    #fab:active { transform: scale(0.91); box-shadow: 0 2px 8px rgba(30,140,69,0.3); }
+    #fab:active { transform: scale(0.91); box-shadow: 0 2px 10px rgba(74,222,128,0.35); }
 
     /* ── Modal / Sheet ── */
     .overlay {
@@ -230,7 +233,7 @@
       font-family: inherit;
       -webkit-appearance: none;
     }
-    .inp:focus { border-color: var(--green); background: #fff; }
+    .inp:focus { border-color: var(--green); background: var(--gray6); }
 
     /* ── Btn row ── */
     .btn-row { display: flex; gap: 12px; padding: 0 18px 10px; }
@@ -246,7 +249,7 @@
       font-family: inherit;
     }
     .btn:active { opacity: 0.8; }
-    .btn-primary { background: var(--green); color: #fff; }
+    .btn-primary { background: linear-gradient(135deg, #4ADE80 0%, #22D3EE 100%); color: #0C1711; }
     .btn-secondary { background: var(--gray5); color: var(--text2); }
 
     /* ── Settings rows ── */
@@ -329,7 +332,7 @@
     .action-item.cancel { color: var(--blue); font-weight: 900; justify-content: center; margin-top: 8px; border-top: 1.5px solid var(--gray5); }
 
     /* ── Search highlight ── */
-    mark { background: rgba(30,140,69,0.18); color: var(--text); border-radius: 3px; font-style: normal; }
+    mark { background: rgba(74,222,128,0.22); color: var(--text); border-radius: 3px; font-style: normal; }
 
     /* ── Close / X btn ── */
     .close-btn {
@@ -363,7 +366,7 @@
       padding: 0 12px; gap: 8px;
       border: 2.5px solid var(--gray4);
     }
-    .add-search-wrap:focus-within { border-color: var(--green); background: #fff; }
+    .add-search-wrap:focus-within { border-color: var(--green); background: var(--gray6); }
     .add-search-inp {
       flex: 1; border: none; background: none; outline: none;
       font-size: 18px; font-weight: 700; color: var(--text);
@@ -424,7 +427,7 @@
       padding: 9px 2px; background: var(--gray6); color: var(--text);
       font-family: inherit; outline: none; -webkit-appearance: none; flex-shrink: 0;
     }
-    .qty-inp:focus { border-color: var(--green); background: #fff; }
+    .qty-inp:focus { border-color: var(--green); background: var(--gray6); }
     .unit-chips {
       display: flex; gap: 7px;
       overflow-x: auto; -webkit-overflow-scrolling: touch;
@@ -447,7 +450,7 @@
       position: sticky; top: 0; z-index: 5;
     }
     .progress-bar {
-      height: 100%; background: var(--green);
+      height: 100%; background: linear-gradient(90deg, #4ADE80, #22D3EE);
       border-radius: 0 4px 4px 0;
       transition: width 0.35s ease;
       min-width: 7px;
@@ -522,7 +525,8 @@
       border-radius: 22px;
       padding: 38px 24px;
       text-align: center;
-      box-shadow: 0 4px 24px rgba(30,140,69,0.16);
+      box-shadow: 0 4px 32px rgba(74,222,128,0.18);
+      border: 1.5px solid rgba(74,222,128,0.2);
     }
     .all-done-emoji { font-size: 76px; line-height: 1; margin-bottom: 16px; }
     .all-done-title { font-size: 30px; font-weight: 900; color: var(--text); margin-bottom: 10px; }
@@ -635,7 +639,7 @@
           <div class="settings-row">
             <span class="settings-row-icon">🛒</span>
             <span class="settings-row-label">CartSmart</span>
-            <span class="settings-row-value" id="app-version">v1.1</span>
+            <span class="settings-row-value" id="app-version">v1.2</span>
           </div>
           <div class="settings-row">
             <span class="settings-row-icon">📦</span>

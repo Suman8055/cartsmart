@@ -1,4 +1,4 @@
-const CACHE = 'cartsmart-v4';
+const CACHE = 'cartsmart-v5';
 const FILES = ['/cartsmart/', '/cartsmart/index.html', '/cartsmart/manifest.json', '/cartsmart/icon.png', '/cartsmart/icon-192.png'];
 
 self.addEventListener('install', e => {
