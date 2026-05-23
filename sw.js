@@ -1,4 +1,4 @@
-const CACHE = 'cartsmart-v2';
+const CACHE = 'cartsmart-v3';
 const FILES = ['/cartsmart/', '/cartsmart/index.html', '/cartsmart/manifest.json', '/cartsmart/icon.png'];
 
 self.addEventListener('install', e => {
@@ -15,6 +15,10 @@ self.addEventListener('activate', e => {
       .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
+});
+
+self.addEventListener('message', e => {
+  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('fetch', e => {

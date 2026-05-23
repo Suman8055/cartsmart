@@ -619,12 +619,23 @@
       </div>
 
       <div class="section">
+        <div class="settings-label">App</div>
+        <div class="card">
+          <div class="settings-row" onclick="updateApp()" id="update-row" style="cursor:pointer;">
+            <span class="settings-row-icon">🔄</span>
+            <span class="settings-row-label">Check for Update</span>
+            <span class="settings-row-value" id="update-status"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
         <div class="settings-label">About</div>
         <div class="card">
           <div class="settings-row">
             <span class="settings-row-icon">🛒</span>
             <span class="settings-row-label">CartSmart</span>
-            <span class="settings-row-value" id="app-version">v1.0</span>
+            <span class="settings-row-value" id="app-version">v1.1</span>
           </div>
           <div class="settings-row">
             <span class="settings-row-icon">📦</span>
@@ -1810,6 +1821,65 @@ function esc(str) {
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 function escRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+
+// ── Update App ───────────────────────────────────────────────────────────────
+async function updateApp() {
+  const status = document.getElementById('update-status');
+  const row    = document.getElementById('update-row');
+  status.textContent = 'Checking…';
+  row.style.pointerEvents = 'none';
+
+  try {
+    if (!('serviceWorker' in navigator)) {
+      status.textContent = 'Not supported';
+      row.style.pointerEvents = '';
+      return;
+    }
+
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (!reg) {
+      status.textContent = 'No SW';
+      row.style.pointerEvents = '';
+      return;
+    }
+
+    const activateSW = (sw) => {
+      sw.postMessage({ type: 'SKIP_WAITING' });
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        showToast('Updated! Reloading…');
+        setTimeout(() => window.location.reload(), 800);
+      }, { once: true });
+    };
+
+    if (reg.waiting) {
+      activateSW(reg.waiting);
+      return;
+    }
+
+    let found = false;
+    reg.addEventListener('updatefound', () => {
+      found = true;
+      const sw = reg.installing;
+      sw.addEventListener('statechange', () => {
+        if (sw.state === 'installed') activateSW(sw);
+      });
+    });
+
+    await reg.update();
+
+    setTimeout(() => {
+      if (!found) {
+        status.textContent = 'Up to date ✓';
+        row.style.pointerEvents = '';
+        setTimeout(() => { status.textContent = ''; }, 3000);
+      }
+    }, 1800);
+
+  } catch (e) {
+    status.textContent = 'Failed';
+    document.getElementById('update-row').style.pointerEvents = '';
+  }
+}
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 renderLists();
