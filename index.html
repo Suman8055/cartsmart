@@ -1544,7 +1544,8 @@ function showAddResults(q) {
   const re = new RegExp(`(${escRe(q)})`, 'gi');
   let html = results.map(it => {
     const highlighted = esc(it.n).replace(re, '<mark>$1</mark>');
-    return `<div class="add-result-row" onclick="selectSuggestion(${JSON.stringify(it.n)},${JSON.stringify(it.c)},${JSON.stringify(it.u)})">
+    const args = `${JSON.stringify(it.n)},${JSON.stringify(it.c)},${JSON.stringify(it.u)}`;
+    return `<div class="add-result-row" onpointerdown="selectSuggestion(${args})" onclick="selectSuggestion(${args})">
       <div>
         <div class="add-result-name">${highlighted}</div>
         <div class="add-result-cat">${esc(it.c)}</div>
@@ -1554,18 +1555,22 @@ function showAddResults(q) {
 
   const qEsc = esc(q);
   if (results.length === 0) {
-    html = `<div class="add-manual-row" onclick="pickManual()">
+    html = `<div class="add-manual-row" onpointerdown="pickManual()" onclick="pickManual()">
       <span style="font-size:20px">＋</span> Add "<strong>${qEsc}</strong>" to list
     </div>`;
   } else {
-    html += `<div class="add-manual-row" onclick="pickManual()">
+    html += `<div class="add-manual-row" onpointerdown="pickManual()" onclick="pickManual()">
       <span style="font-size:17px">✏️</span> Add "<strong>${qEsc}</strong>" as custom item
     </div>`;
   }
   document.getElementById('add-results').innerHTML = html;
 }
 
+let _lastSelect = 0;
 function selectSuggestion(name, cat, unit) {
+  const now = Date.now();
+  if (now - _lastSelect < 300) return; // guard double-fire from pointerdown+click
+  _lastSelect = now;
   document.getElementById('add-search-inp').value = name;
   document.getElementById('search-clear').style.display = 'block';
   addUnit = unit;
@@ -1576,7 +1581,11 @@ function selectSuggestion(name, cat, unit) {
   document.getElementById('qty-inp').select();
 }
 
+let _lastManual = 0;
 function pickManual() {
+  const now = Date.now();
+  if (now - _lastManual < 300) return;
+  _lastManual = now;
   const q = document.getElementById('add-search-inp').value.trim();
   if (!q) return;
   document.getElementById('add-results').innerHTML =
