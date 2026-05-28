@@ -96,6 +96,35 @@
     }
     .ph-action:active { opacity: 0.85; }
 
+    /* ── Store picker ── */
+    .store-bar {
+      display: flex; gap: 8px;
+      padding: 0 14px 14px;
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .store-bar::-webkit-scrollbar { display: none; }
+    .store-chip {
+      display: flex; align-items: center; gap: 6px;
+      padding: 9px 16px;
+      border-radius: 22px;
+      border: 2px solid var(--gray4);
+      background: var(--gray6);
+      color: var(--gray1);
+      font-size: 14px; font-weight: 800;
+      white-space: nowrap; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: all 0.15s;
+      font-family: inherit;
+      flex-shrink: 0;
+    }
+    .store-chip.active {
+      border-color: var(--green);
+      background: var(--green-lt);
+      color: var(--green);
+    }
+    .store-chip-emoji { font-size: 16px; }
+
     /* ── Bottom nav ── */
     #nav {
       background: var(--card);
@@ -570,7 +599,21 @@
     <!-- LISTS TAB -->
     <div class="screen active" id="screen-lists">
       <div class="ph">
-        <span class="ph-title">My Lists</span>
+        <span class="ph-title" id="lists-title">My Lists</span>
+      </div>
+      <div class="store-bar" id="store-bar">
+        <button class="store-chip active" data-store="walmart" onclick="switchStore('walmart')">
+          <span class="store-chip-emoji">🔵</span> Walmart
+        </button>
+        <button class="store-chip" data-store="kroger" onclick="switchStore('kroger')">
+          <span class="store-chip-emoji">🔴</span> Kroger
+        </button>
+        <button class="store-chip" data-store="costco" onclick="switchStore('costco')">
+          <span class="store-chip-emoji">🟡</span> Costco
+        </button>
+        <button class="store-chip" data-store="indian" onclick="switchStore('indian')">
+          <span class="store-chip-emoji">🟢</span> Indian Store
+        </button>
       </div>
       <div class="section" id="lists-container">
         <div class="empty" id="lists-empty">
@@ -639,7 +682,7 @@
           <div class="settings-row">
             <span class="settings-row-icon">🛒</span>
             <span class="settings-row-label">CartSmart</span>
-            <span class="settings-row-value" id="app-version">v1.2.1</span>
+            <span class="settings-row-value" id="app-version">v1.3.0</span>
           </div>
           <div class="settings-row">
             <span class="settings-row-icon">📦</span>
@@ -1405,12 +1448,19 @@ if ('serviceWorker' in navigator) {
 }
 
 // ── Data ────────────────────────────────────────────────────────────────────
-const STORE_KEY = 'cs_v1';
+const STORES = {
+  walmart: { key: 'cs_walmart', label: 'Walmart',      emoji: '🔵' },
+  kroger:  { key: 'cs_kroger',  label: 'Kroger',       emoji: '🔴' },
+  costco:  { key: 'cs_costco',  label: 'Costco',       emoji: '🟡' },
+  indian:  { key: 'cs_indian',  label: 'Indian Store', emoji: '🟢' },
+};
+
+let currentStore = localStorage.getItem('cs_active_store') || 'walmart';
 let D = load();
 
 function load() {
   try {
-    const raw = localStorage.getItem(STORE_KEY);
+    const raw = localStorage.getItem(STORES[currentStore].key);
     if (raw) {
       const d = JSON.parse(raw);
       if (d && Array.isArray(d.lists)) return d;
@@ -1420,10 +1470,38 @@ function load() {
 }
 
 function save() {
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(D)); } catch(_) {}
+  try { localStorage.setItem(STORES[currentStore].key, JSON.stringify(D)); } catch(_) {}
 }
 
 function uid() { return D.nextId++; }
+
+function switchStore(store) {
+  if (store === currentStore) return;
+  save();
+  currentStore = store;
+  localStorage.setItem('cs_active_store', store);
+  D = load();
+  // Update store bar UI
+  document.querySelectorAll('.store-chip').forEach(c => {
+    c.classList.toggle('active', c.dataset.store === store);
+  });
+  // Update header title
+  document.getElementById('lists-title').textContent = STORES[store].label;
+  // Reset shop tab since active list belongs to previous store
+  D.activeListId = null;
+  save();
+  document.getElementById('shop-title').textContent = 'Shopping';
+  document.getElementById('shop-share-btn').style.display = 'none';
+  document.getElementById('shop-body').innerHTML = `
+    <div class="empty">
+      <div class="empty-icon">🥦</div>
+      <div class="empty-title">No list open</div>
+      <div class="empty-sub">Open a list from <strong>My Lists</strong> to start shopping</div>
+    </div>`;
+  updateShopBadge(0);
+  renderLists();
+  showTab('lists');
+}
 
 // ── Tab navigation ──────────────────────────────────────────────────────────
 let currentTab = 'lists';
@@ -2015,7 +2093,7 @@ function exportData() {
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
   a.href     = url;
-  a.download = `CartSmart_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.download = `CartSmart_${STORES[currentStore].label.replace(/\s+/g,'_')}_backup_${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -2136,6 +2214,12 @@ async function updateApp() {
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
+// Restore active store chip & title
+document.querySelectorAll('.store-chip').forEach(c => {
+  c.classList.toggle('active', c.dataset.store === currentStore);
+});
+document.getElementById('lists-title').textContent = STORES[currentStore].label;
+
 renderLists();
 if (D.activeListId) {
   const active = D.lists.find(l => l.id === D.activeListId);
