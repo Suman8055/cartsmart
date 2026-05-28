@@ -1812,10 +1812,10 @@ function showAddResults(q) {
   container.innerHTML = html;
 
   container.querySelectorAll('.add-result-row').forEach(row => {
-    row.addEventListener('pointerdown', () => selectSuggestion(row.dataset.n, row.dataset.c, row.dataset.u));
+    row.addEventListener('click', () => selectSuggestion(row.dataset.n, row.dataset.c, row.dataset.u));
   });
   container.querySelectorAll('.add-pick-manual').forEach(row => {
-    row.addEventListener('pointerdown', pickManual);
+    row.addEventListener('click', pickManual);
   });
 }
 
